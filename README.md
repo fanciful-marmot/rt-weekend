@@ -6,7 +6,7 @@ This was mostly a way for me to learn about Rust while making some pretty pictur
 Added basic Lua scripting but that area in particular could use some attention. Really had to fight with the borrow checker in that area.
 
 ## Setup
- - Install [Rust](https://www.rust-lang.org/). Works with at least v1.51.0
+ - Install [Rust](https://www.rust-lang.org/). Works with at least v1.79.0
 
 ## Build
 I highly recommend running it in release mode. It's incredibly slow otherwise

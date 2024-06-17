@@ -1,4 +1,4 @@
--- Total time: 26.445 seconds
+-- Total time: 10.931 seconds (Macbook Air M1, 2020)
 -- width = 1200;
 -- height = 600;
 -- samples = 200;
@@ -6,6 +6,27 @@
 width = 1200;
 height = 600;
 samples = 200;
+
+--- Built-ins ---
+-- TODO: Should be automatically provided by engine
+function vec3(x, y, z)
+    return {
+        x = x,
+        y = y,
+        z = z,
+    }
+end
+
+function camera(look_from, look_at, v_up, v_fov, aspect)
+    return {
+        look_from = look_from,
+        look_at = look_at,
+        v_up = v_up,
+        v_fov = v_fov,
+        aspect = aspect,
+    }
+end
+-- Built-ins ---
 
 look_from = vec3(0, 0, 0);
 look_at = vec3(0, 0, -1);

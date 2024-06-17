@@ -3,8 +3,8 @@ use std::io::BufWriter;
 use std::path::Path;
 
 use minifb::{Key, Window, WindowOptions};
+use mlua::{Error, FromLua, Lua, Result, UserData, Value};
 use rand::Rng;
-use rlua::{Context, Error, FromLua, Result, UserData, Value};
 
 pub mod camera;
 pub mod geometry;
@@ -180,23 +180,52 @@ fn conversion_error<T>(from: &'static str, to: &'static str, reason: &str) -> Re
 impl UserData for Vec3 {}
 impl UserData for Camera {}
 
-impl<'lua> FromLua<'lua> for Material {
-    fn from_lua(value: Value<'lua>, c: Context<'lua>) -> Result<Self> {
+impl<'lua> FromLua<'lua> for Vec3 {
+    fn from_lua(value: Value<'lua>, _lua: &'lua Lua) -> Result<Self> {
         match value {
             Value::Table(table) => {
-                let material_type = String::from_lua(table.get("type")?, c)?;
+                let x: f32 = table.get("x")?;
+                let y: f32 = table.get("y")?;
+                let z: f32 = table.get("z")?;
+
+                Ok(Vec3::new(x, y, z))
+            }
+            _ => conversion_error("Value", "Vec3", "expected table"),
+        }
+    }
+}
+
+impl<'lua> FromLua<'lua> for Camera {
+    fn from_lua(value: Value<'lua>, _lua: &'lua Lua) -> Result<Self> {
+        match value {
+            Value::Table(table) => {
+                let look_from: Vec3 = table.get("look_from")?;
+                let look_at: Vec3 = table.get("look_at")?;
+                let v_up: Vec3 = table.get("v_up")?;
+                let v_fov: f32 = table.get("v_fov")?;
+                let aspect: f32 = table.get("aspect")?;
+
+                Ok(Camera::new(&look_from, &look_at, &v_up, v_fov, aspect))
+            }
+            _ => conversion_error("Value", "Vec3", "expected table"),
+        }
+    }
+}
+
+impl<'lua> FromLua<'lua> for Material {
+    fn from_lua(value: Value<'lua>, lua: &'lua Lua) -> Result<Self> {
+        match value {
+            Value::Table(table) => {
+                let material_type: String = table.get("type")?;
                 match &material_type[..] {
-                    "lambertian" => Ok(Material::new_lambertian(Vec3::from_lua(
-                        table.get("albedo")?,
-                        c,
-                    )?)),
+                    "lambertian" => Ok(Material::new_lambertian(table.get("albedo")?)),
                     "metal" => Ok(Material::new_metal(
-                        Vec3::from_lua(table.get("albedo")?, c)?,
-                        f32::from_lua(table.get("roughness")?, c)?,
+                        Vec3::from_lua(table.get("albedo")?, lua)?,
+                        f32::from_lua(table.get("roughness")?, lua)?,
                     )),
                     "dielectric" => Ok(Material::new_dielectric(f32::from_lua(
                         table.get("refractive_index")?,
-                        c,
+                        lua,
                     )?)),
                     _ => conversion_error(
                         "Value",
@@ -211,12 +240,12 @@ impl<'lua> FromLua<'lua> for Material {
 }
 
 impl<'lua> FromLua<'lua> for Sphere {
-    fn from_lua(value: Value<'lua>, c: Context<'lua>) -> Result<Self> {
+    fn from_lua(value: Value<'lua>, lua: &'lua Lua) -> Result<Self> {
         match value {
             Value::Table(table) => {
-                let position = Vec3::from_lua(table.get("position")?, c)?;
+                let position = Vec3::from_lua(table.get("position")?, lua)?;
                 let radius = table.get("radius")?;
-                let material = Material::from_lua(table.get("material")?, c)?;
+                let material = Material::from_lua(table.get("material")?, lua)?;
 
                 Ok(Sphere::new(position, radius, material))
             }
@@ -227,12 +256,12 @@ impl<'lua> FromLua<'lua> for Sphere {
 
 // Generate hittable list from Lua table
 impl<'lua> FromLua<'lua> for Box<dyn Hittable> {
-    fn from_lua(value: Value<'lua>, c: Context<'lua>) -> Result<Self> {
+    fn from_lua(value: Value<'lua>, lua: &'lua Lua) -> Result<Self> {
         match &value {
             Value::Table(table) => {
-                let object_type = String::from_lua(table.get("type")?, c)?;
+                let object_type = String::from_lua(table.get("type")?, lua)?;
                 let result = match &object_type[..] {
-                    "sphere" => Sphere::from_lua(value, c),
+                    "sphere" => Sphere::from_lua(value, lua),
                     _ => conversion_error(
                         "Value",
                         "dyn Hittable",
