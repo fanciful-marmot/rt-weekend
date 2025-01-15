@@ -12,7 +12,7 @@ pub struct BVHNode {
 impl BVHNode {
     pub fn new(objects: Vec<Box<dyn Hittable>>) -> BVHNode {
         let mut objects = objects;
-        let axis = rand::thread_rng().gen_range(0, 3);
+        let axis = rand::thread_rng().gen_range(0..3);
 
         let comparator = |a: &Box<dyn Hittable>, b: &Box<dyn Hittable>| {
             let (min_a, min_b) = (

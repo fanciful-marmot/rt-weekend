@@ -1,4 +1,4 @@
-use clap::{App, Arg};
+use clap::Parser;
 use std::fs::File;
 use std::io::Read;
 
@@ -46,20 +46,21 @@ fn run_lua(script: &String) -> mlua::Result<()> {
     lua.load(script).exec()
 }
 
-fn main() -> mlua::Result<()> {
-    let matches = App::new("rt_weekend")
-        .version("1.0")
-        .author("fanciful-marmot")
-        .about("A ray tracer written in Rust")
-        .arg(
-            Arg::with_name("scene")
-                .index(1)
-                .help(".lua file describing the scene to render")
-                .required(true),
-        )
-        .get_matches();
+#[derive(Parser, Debug)]
+#[command(name = "rt_weekend")]
+#[command(version = "1.0")]
+#[command(author = "fanciful-marmot")]
+#[command(about = "A ray tracer written in Rust", long_about = None)]
+struct Args {
+    /// .lua file describing the scene to render
+    #[arg(short, long)]
+    scene: String,
+}
 
-    let file_path = matches.value_of("scene").unwrap();
+fn main() -> mlua::Result<()> {
+    let args = Args::parse();
+
+    let file_path = args.scene;
 
     // Read the script file
     let mut script = String::new();

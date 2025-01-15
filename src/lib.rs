@@ -25,7 +25,7 @@ fn write_png(file_name: &str, width: u32, height: u32, data: &[u8]) {
     let ref mut w = BufWriter::new(file);
 
     let mut encoder = png::Encoder::new(w, width, height);
-    encoder.set_color(png::ColorType::RGB);
+    encoder.set_color(png::ColorType::Rgb);
     encoder.set_depth(png::BitDepth::Eight);
     let mut writer = encoder.write_header().unwrap();
 
@@ -122,7 +122,7 @@ pub fn output_window(width: usize, height: usize, camera: &Camera, scene: &Box<d
     });
 
     // Limit to max ~60 fps update rate
-    window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
+    window.set_target_fps(60);
 
     let mut count = 0;
     while window.is_open() && !window.is_key_down(Key::Escape) {
