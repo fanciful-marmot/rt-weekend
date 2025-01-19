@@ -7,12 +7,11 @@ in Rust.
 This was mostly a way for me to learn about Rust while making some pretty
 pictures. Definitely has room for improvement.
 
-Added basic Lua scripting but that area in particular could use some attention.
-Really had to fight with the borrow checker in that area.
+Added basic [Rhai](https://rhai.rs/) scripting to describe the scenes.
 
 ## Setup
 
-- Install [Rust](https://www.rust-lang.org/). Works with at least v1.79.0
+- Install [Rust](https://www.rust-lang.org/). Works with at least v1.84.0
 
 ## Build
 
