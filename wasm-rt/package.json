@@ -1,0 +1,19 @@
+{
+  "name": "wasm-rt",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "http-server .",
+    "build": "wasm-pack build --target web"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fanciful-marmot/rt-weekend.git"
+  },
+  "keywords": [],
+  "author": "fanciful-marmot",
+  "license": "Unlicense",
+  "homepage": "https://github.com/fanciful-marmot/rt-weekend#readme",
+  "devDependencies": {
+    "http-server": "^14.1.x"
+  }
+}

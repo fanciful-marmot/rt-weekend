@@ -1,15 +1,15 @@
 [package]
-name = "rt-weekend"
+name = "rt"
 version = "0.1.0"
-authors = ["fanciful-marmot <daniel.crookston@gmail.com>"]
+authors = ["fanciful-marmot"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+wasm-bindgen = ["rhai/wasm-bindgen"]
+
 [dependencies]
-clap = { version = "4.5.26", features = ["derive"] }
-minifb = "0.27.0"
-png = "0.17.16"
 rand = "0.8.5"
 rhai = { version = "1.20.1", features = ["f32_float"] }
 rhai-rand = { version = "0.1.6", default-features = false, features = ["float"] }
