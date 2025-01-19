@@ -7,6 +7,7 @@ pub struct Scatter {
     pub ray: Ray,
 }
 
+#[derive(Copy, Clone)]
 pub struct Lambertian {
     albedo: Vec3,
 }
@@ -26,6 +27,7 @@ impl Lambertian {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct Metal {
     albedo: Vec3,
     roughness: f32,
@@ -50,6 +52,7 @@ impl Metal {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct Dielectric {
     refraction_index: f32,
 }
@@ -94,6 +97,7 @@ impl Dielectric {
     }
 }
 
+#[derive(Copy, Clone)]
 pub enum Material {
     Lambertian(Lambertian),
     Metal(Metal),

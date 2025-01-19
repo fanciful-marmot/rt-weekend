@@ -2,6 +2,7 @@ use crate::geometry::{Hit, Hittable, AABB};
 use crate::material::Material;
 use crate::math::{Ray, Vec3};
 
+#[derive(Clone)]
 pub struct Sphere {
     pub center: Vec3,
     pub material: Material,

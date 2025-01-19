@@ -2,48 +2,53 @@ use clap::Parser;
 use std::fs::File;
 use std::io::Read;
 
-use mlua::Lua;
+use rhai::packages::Package;
+use rhai::Engine;
+use rhai_rand::RandomPackage;
 
 use rt_weekend::camera::Camera;
-use rt_weekend::geometry::{BVHNode, Hittable, HittableList};
+use rt_weekend::geometry::{BVHNode, Hittable, HittableList, Sphere};
+use rt_weekend::material::Material;
+use rt_weekend::math::Vec3;
 use rt_weekend::{output_png, output_window};
 
-fn run_lua(script: &String) -> mlua::Result<()> {
-    let lua = Lua::new();
+fn run_script(script: &str, window: bool) -> Result<(), Box<rhai::EvalAltResult>> {
+    let mut engine = Engine::new();
+    engine
+        .build_type::<Vec3>()
+        .build_type::<Camera>()
+        .build_type::<Material>()
+        .build_type::<Sphere>()
+        .register_fn(
+            "render",
+            move |w: i64, h: i64, s: i64, c: Camera, scene: rhai::Array, p: &str| {
+                let mut list: Vec<Box<dyn Hittable>> = Vec::new();
+                for sphere in scene.iter() {
+                    match sphere.clone().try_cast::<Sphere>() {
+                        Some(s) => list.push(Box::new(s)),
+                        None => (),
+                    }
+                }
 
-    // Load contex
-    let globals = lua.globals();
+                let world: Box<dyn Hittable> = if list.len() > 10 {
+                    Box::new(BVHNode::new(list))
+                } else {
+                    Box::new(HittableList::from_vec(list))
+                };
 
-    // Add render function
-    let render = lua.create_function(
-        |_,
-         (width, height, samples, camera, hitlist, output_path): (
-            u32,
-            u32,
-            u32,
-            Camera,
-            Vec<Box<dyn Hittable>>,
-            Option<String>,
-        )| {
-            let world: Box<dyn Hittable> = if hitlist.len() > 10 {
-                Box::new(BVHNode::new(hitlist))
-            } else {
-                Box::new(HittableList::from_vec(hitlist))
-            };
+                if window {
+                    output_window(w as usize, h as usize, &c, &world);
+                } else {
+                    output_png(w as u32, h as u32, s as u32, &c, &world, p);
+                }
+            },
+        );
 
-            match output_path {
-                Some(path) => output_png(width, height, samples, &camera, &world, &path),
-                None => output_window(width as usize, height as usize, &camera, &world),
-            }
+    // Add RNG support
+    let random = RandomPackage::new();
+    random.register_into_engine(&mut engine);
 
-            Ok(())
-        },
-    )?;
-
-    globals.set("render", render)?;
-
-    // Run script
-    lua.load(script).exec()
+    engine.eval::<()>(&script)
 }
 
 #[derive(Parser, Debug)]
@@ -52,12 +57,16 @@ fn run_lua(script: &String) -> mlua::Result<()> {
 #[command(author = "fanciful-marmot")]
 #[command(about = "A ray tracer written in Rust", long_about = None)]
 struct Args {
-    /// .lua file describing the scene to render
+    /// .rhai file describing the scene to render
     #[arg(short, long)]
     scene: String,
+
+    /// Output incrementally to window instead
+    #[arg(short, long)]
+    window: bool,
 }
 
-fn main() -> mlua::Result<()> {
+fn main() {
     let args = Args::parse();
 
     let file_path = args.scene;
@@ -70,5 +79,10 @@ fn main() -> mlua::Result<()> {
         .expect("could not read script");
 
     // Run script
-    run_lua(&script)
+    let result = run_script(&script, args.window);
+
+    match result {
+        Ok(()) => println!("Done!"),
+        Err(e) => println!("Failed: {}", e),
+    }
 }

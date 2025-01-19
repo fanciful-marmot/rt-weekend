@@ -3,7 +3,6 @@ use std::io::BufWriter;
 use std::path::Path;
 
 use minifb::{Key, Window, WindowOptions};
-use mlua::{Error, FromLua, Lua, Result, UserData, Value};
 use rand::Rng;
 
 pub mod camera;
@@ -168,116 +167,64 @@ pub fn output_window(width: usize, height: usize, camera: &Camera, scene: &Box<d
     }
 }
 
-// Lua bindings
-fn conversion_error<T>(from: &'static str, to: &'static str, reason: &str) -> Result<T> {
-    Err(Error::FromLuaConversionError {
-        from,
-        to,
-        message: Some(String::from(reason)),
-    })
-}
+// Rhai bindings
 
-impl UserData for Vec3 {}
-impl UserData for Camera {}
-
-impl<'lua> FromLua<'lua> for Vec3 {
-    fn from_lua(value: Value<'lua>, _lua: &'lua Lua) -> Result<Self> {
-        match value {
-            Value::Table(table) => {
-                let x: f32 = table.get("x")?;
-                let y: f32 = table.get("y")?;
-                let z: f32 = table.get("z")?;
-
-                Ok(Vec3::new(x, y, z))
-            }
-            _ => conversion_error("Value", "Vec3", "expected table"),
-        }
+impl rhai::CustomType for Vec3 {
+    fn build(mut builder: rhai::TypeBuilder<Self>) {
+        builder
+            .with_name("Vec3")
+            .with_fn("vec3", Self::new)
+            // Indexer get/set functions that do not panic on invalid indices
+            .with_indexer_get_set(
+                |vec: &mut Self, idx: i64| -> Result<f32, Box<rhai::EvalAltResult>> {
+                    match idx {
+                        0 => Ok(vec.x),
+                        1 => Ok(vec.y),
+                        2 => Ok(vec.z),
+                        _ => Err(rhai::EvalAltResult::ErrorIndexNotFound(
+                            idx.into(),
+                            rhai::Position::NONE,
+                        )
+                        .into()),
+                    }
+                },
+                |vec: &mut Self, idx: i64, value: f32| -> Result<(), Box<rhai::EvalAltResult>> {
+                    match idx {
+                        0 => vec.x = value,
+                        1 => vec.y = value,
+                        2 => vec.z = value,
+                        _ => {
+                            return Err(rhai::EvalAltResult::ErrorIndexNotFound(
+                                idx.into(),
+                                rhai::Position::NONE,
+                            )
+                            .into())
+                        }
+                    }
+                    Ok(())
+                },
+            );
     }
 }
 
-impl<'lua> FromLua<'lua> for Camera {
-    fn from_lua(value: Value<'lua>, _lua: &'lua Lua) -> Result<Self> {
-        match value {
-            Value::Table(table) => {
-                let look_from: Vec3 = table.get("look_from")?;
-                let look_at: Vec3 = table.get("look_at")?;
-                let v_up: Vec3 = table.get("v_up")?;
-                let v_fov: f32 = table.get("v_fov")?;
-                let aspect: f32 = table.get("aspect")?;
-
-                Ok(Camera::new(&look_from, &look_at, &v_up, v_fov, aspect))
-            }
-            _ => conversion_error("Value", "Vec3", "expected table"),
-        }
+impl rhai::CustomType for Camera {
+    fn build(mut builder: rhai::TypeBuilder<Self>) {
+        builder.with_name("Camera").with_fn("camera", Self::new);
     }
 }
 
-impl<'lua> FromLua<'lua> for Material {
-    fn from_lua(value: Value<'lua>, lua: &'lua Lua) -> Result<Self> {
-        match value {
-            Value::Table(table) => {
-                let material_type: String = table.get("type")?;
-                match &material_type[..] {
-                    "lambertian" => Ok(Material::new_lambertian(table.get("albedo")?)),
-                    "metal" => Ok(Material::new_metal(
-                        Vec3::from_lua(table.get("albedo")?, lua)?,
-                        f32::from_lua(table.get("roughness")?, lua)?,
-                    )),
-                    "dielectric" => Ok(Material::new_dielectric(f32::from_lua(
-                        table.get("refractive_index")?,
-                        lua,
-                    )?)),
-                    _ => conversion_error(
-                        "Value",
-                        "Material",
-                        &format!("unknown material type {}", material_type)[..],
-                    ),
-                }
-            }
-            _ => conversion_error("Value", "Material", "expected table"),
-        }
+impl rhai::CustomType for Material {
+    fn build(mut builder: rhai::TypeBuilder<Self>) {
+        builder
+            .with_name("Material")
+            .with_fn("lambertian", Material::new_lambertian)
+            .with_fn("metal", Material::new_metal)
+            .with_fn("dielectric", Material::new_dielectric);
     }
 }
 
-impl<'lua> FromLua<'lua> for Sphere {
-    fn from_lua(value: Value<'lua>, lua: &'lua Lua) -> Result<Self> {
-        match value {
-            Value::Table(table) => {
-                let position = Vec3::from_lua(table.get("position")?, lua)?;
-                let radius = table.get("radius")?;
-                let material = Material::from_lua(table.get("material")?, lua)?;
-
-                Ok(Sphere::new(position, radius, material))
-            }
-            _ => conversion_error("Value", "Material", "expected table"),
-        }
-    }
-}
-
-// Generate hittable list from Lua table
-impl<'lua> FromLua<'lua> for Box<dyn Hittable> {
-    fn from_lua(value: Value<'lua>, lua: &'lua Lua) -> Result<Self> {
-        match &value {
-            Value::Table(table) => {
-                let object_type = String::from_lua(table.get("type")?, lua)?;
-                let result = match &object_type[..] {
-                    "sphere" => Sphere::from_lua(value, lua),
-                    _ => conversion_error(
-                        "Value",
-                        "dyn Hittable",
-                        &format!("Unknown type {}", object_type)[..],
-                    ),
-                };
-
-                Ok(Box::new(result.unwrap()))
-            }
-            _ => Err(Error::FromLuaConversionError {
-                from: "Value",
-                to: "HittableList",
-                message: Some(String::from(
-                    "table must be a sequence with at least one object",
-                )),
-            }),
-        }
+impl rhai::CustomType for Sphere {
+    fn build(mut builder: rhai::TypeBuilder<Self>) {
+        builder.with_name("Sphere").with_fn("sphere", Sphere::new);
     }
 }

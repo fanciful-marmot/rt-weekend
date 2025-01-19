@@ -10,7 +10,7 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(look_from: &Vec3, look_at: &Vec3, v_up: &Vec3, v_fov: f32, aspect: f32) -> Camera {
+    pub fn new(look_from: Vec3, look_at: Vec3, v_up: Vec3, v_fov: f32, aspect: f32) -> Camera {
         let half_theta = v_fov * PI / 360.0;
         let half_height = (half_theta).tan();
         let half_width = aspect * half_height;

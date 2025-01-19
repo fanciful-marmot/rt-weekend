@@ -25,7 +25,6 @@ impl HittableList {
     pub fn new() -> HittableList {
         HittableList {
             list: Vec::new(),
-            // TODO: Using MIN/MAX seems hacky. At this point it really has no bounding box
             aabb: None,
         }
     }
