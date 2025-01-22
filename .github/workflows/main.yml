@@ -51,6 +51,8 @@ jobs:
       run: |
         mkdir dist
         cp -r pkg dist/pkg
+        cp index.mjs dist
+        cp worker.mjs dist
         cp index.html dist
     - name: Setup Pages
       uses: actions/configure-pages@v5

@@ -1,6 +1,5 @@
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::Clamped;
-use web_sys::{console, CanvasRenderingContext2d, ImageData};
+use web_sys::{console, js_sys};
 
 use rhai::packages::Package;
 use rhai::Engine;
@@ -13,7 +12,7 @@ use rt::math::Vec3;
 use rt::output_buffer;
 
 #[wasm_bindgen]
-pub fn render(script: &str, ctx: CanvasRenderingContext2d) {
+pub fn render(script: &str, on_progress: js_sys::Function) {
     console::log_1(&"Building engine...".into());
     let mut engine = Engine::new();
     engine
@@ -41,20 +40,15 @@ pub fn render(script: &str, ctx: CanvasRenderingContext2d) {
                 console::log_1(&"Rendering...".into());
                 let width = w as u32;
                 let height = h as u32;
-                // Data MUST be in RGBA format
-                let data = output_buffer(width, height, s as u32, &c, &world);
-                console::log_1(&"Gathering image data...".into());
 
-                if let Ok(image_data) =
-                    ImageData::new_with_u8_clamped_array_and_sh(Clamped(&data), 400, 200)
-                {
-                    console::log_1(&"Writing to canvas...".into());
-                    if let Err(_e) = ctx.put_image_data(&image_data, 0.0, 0.0) {
-                        console::log_1(&"Failed to write to canvas".into());
-                    }
-                } else {
-                    console::log_1(&"Failed to gather image data".into());
-                }
+                let p = |data: Vec<u8>| {
+                    let this = JsValue::null();
+                    let _ = on_progress.call1(&this, &JsValue::from(data.as_ptr()));
+                };
+
+                // Data MUST be in RGBA format
+                let data = output_buffer(width, height, s as u32, &c, &world, &p);
+                p(data);
             },
         );
 

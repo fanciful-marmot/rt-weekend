@@ -39,24 +39,42 @@ pub fn cast_ray(ray: Ray, world: &Box<dyn Hittable>, depth: u32) -> Vec3 {
     color
 }
 
+fn f32_buf_to_u8(fb: &Vec<f32>, samples: f32) -> Vec<u8> {
+    let pixels = fb.len() / 3;
+    let mut vu8: Vec<u8> = vec![0; pixels * 4];
+    for i in 0..pixels {
+        let vu8i = i * 4;
+        let fbi = i * 3;
+        // Gamma correction.
+        // TODO: Is it needed?
+        vu8[vu8i] = ((fb[fbi] / samples).sqrt() * 255.99) as u8;
+        vu8[vu8i + 1] = ((fb[fbi + 1] / samples).sqrt() * 255.99) as u8;
+        vu8[vu8i + 2] = ((fb[fbi + 2] / samples).sqrt() * 255.99) as u8;
+        vu8[vu8i + 3] = 255;
+    }
+
+    vu8
+}
+
 pub fn output_buffer(
     width: u32,
     height: u32,
     samples: u32,
     camera: &Camera,
     scene: &Box<dyn Hittable>,
+    on_progress: &impl Fn(Vec<u8>),
 ) -> Vec<u8> {
     let mut rng = rand::thread_rng();
-    let size = (width * height * 4) as usize;
-    let mut data: Vec<u8> = vec![0; size];
-    for y in 0..height {
-        for x in 0..width {
-            // Get pixel index in array
-            let i = ((y * width + x) * 4) as usize;
+    let size = (width * height * 3) as usize;
+    let mut data: Vec<f32> = vec![0.0; size];
+    for s in 0..samples {
+        for y in 0..height {
+            for x in 0..width {
+                // Get pixel index in array
+                let i = ((y * width + x) * 3) as usize;
 
-            // Cast rays
-            let mut color = Vec3::new(0.0, 0.0, 0.0);
-            for _ in 0..samples {
+                // Cast ray
+                let mut color = Vec3::new(0.0, 0.0, 0.0);
                 // Get uv coordinate. Flipping y because of encoding order in PNG
                 // Jitter the ray by a random amount
                 let u = (x as f32 + rng.gen::<f32>()) / width as f32;
@@ -64,23 +82,21 @@ pub fn output_buffer(
                 let ray = camera.get_ray(u, v);
 
                 color += cast_ray(ray, &scene, 0);
+
+                // Write colour value into buffer
+                data[i] += color.x;
+                data[i + 1] += color.y;
+                data[i + 2] += color.z;
             }
-            color /= samples as f32;
+        }
 
-            // Gamma correction.
-            // TODO: Is it needed?
-            color.set(color.x.sqrt(), color.y.sqrt(), color.z.sqrt());
-
-            // Write colour value as u8 into buffer
-            let (r, g, b) = color.as_rgb();
-            data[i] = r;
-            data[i + 1] = g;
-            data[i + 2] = b;
-            data[i + 3] = 255;
+        // Send results every 10 samples
+        if s % 10 == 0 {
+            on_progress(f32_buf_to_u8(&data, (s + 1) as f32));
         }
     }
 
-    data
+    f32_buf_to_u8(&data, samples as f32)
 }
 
 // Rhai bindings

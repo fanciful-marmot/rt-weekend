@@ -40,7 +40,7 @@ pub fn output_png(
     scene: &Box<dyn Hittable>,
     output_path: &str,
 ) {
-    let data = output_buffer(width, height, samples, camera, scene);
+    let data = output_buffer(width, height, samples, camera, scene, &|_v: Vec<u8>| {});
 
     write_png(output_path, width, height, &data);
 }
