@@ -4,7 +4,7 @@ use rand::Rng;
 
 pub struct Scatter {
     pub attenuation: Vec3,
-    pub ray: Ray,
+    pub ray: Option<Ray>,
 }
 
 #[derive(Copy, Clone)]
@@ -16,12 +16,12 @@ impl Lambertian {
     fn scatter(&self, _: &Ray, hit: &Hit) -> Option<Scatter> {
         // Diffuse bounce (uniformly random direction)
         Some(Scatter {
-            ray: Ray {
+            ray: Some(Ray {
                 origin: hit.point,
                 direction: hit.normal + random_in_unit_sphere(),
                 // direction: hit.normal + random_unit_vector(),
                 // direction: hit.normal + random_in_hemisphere(&hit.normal),
-            },
+            }),
             attenuation: self.albedo,
         })
     }
@@ -41,10 +41,10 @@ impl Metal {
         if reflected.dot(&hit.normal) > 0.0 {
             Some(Scatter {
                 attenuation: self.albedo.clone(),
-                ray: Ray {
+                ray: Some(Ray {
                     origin: hit.point.clone(),
                     direction: reflected,
-                },
+                }),
             })
         } else {
             None
@@ -89,10 +89,24 @@ impl Dielectric {
 
         Some(Scatter {
             attenuation,
-            ray: Ray {
+            ray: Some(Ray {
                 origin: hit.point.clone(),
                 direction,
-            },
+            }),
+        })
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct Emissive {
+    emittance: Vec3,
+}
+
+impl Emissive {
+    fn scatter(&self, _: &Ray, _: &Hit) -> Option<Scatter> {
+        Some(Scatter {
+            ray: None,
+            attenuation: self.emittance,
         })
     }
 }
@@ -102,6 +116,7 @@ pub enum Material {
     Lambertian(Lambertian),
     Metal(Metal),
     Dielectric(Dielectric),
+    Emissive(Emissive),
 }
 
 impl Material {
@@ -112,8 +127,13 @@ impl Material {
     pub fn new_metal(albedo: Vec3, roughness: f32) -> Material {
         Material::Metal(Metal { albedo, roughness })
     }
+
     pub fn new_dielectric(refraction_index: f32) -> Material {
         Material::Dielectric(Dielectric { refraction_index })
+    }
+
+    pub fn new_emissive(emittance: Vec3) -> Material {
+        Material::Emissive(Emissive { emittance })
     }
 
     pub fn scatter(&self, ray: &Ray, hit: &Hit) -> Option<Scatter> {
@@ -121,6 +141,7 @@ impl Material {
             Material::Lambertian(l) => l.scatter(ray, hit),
             Material::Metal(m) => m.scatter(ray, hit),
             Material::Dielectric(m) => m.scatter(ray, hit),
+            Material::Emissive(m) => m.scatter(ray, hit),
         }
     }
 }

@@ -22,12 +22,18 @@ pub fn cast_ray(ray: Ray, world: &Box<dyn Hittable>, depth: u32) -> Vec3 {
             let t = 0.5 * (unit_direction.y + 1.0);
 
             // Lerp blue and white
-            (1.0 - t) * Vec3::new(1.0, 1.0, 1.0) + t * Vec3::new(0.5, 0.7, 1.0)
+            0.1 * ((1.0 - t) * Vec3::new(1.0, 1.0, 1.0) + t * Vec3::new(0.5, 0.7, 1.0))
         }
         Some(hit) => {
             if depth < MAX_DEPTH {
                 match hit.material.scatter(&ray, &hit) {
-                    Some(scatter) => scatter.attenuation * cast_ray(scatter.ray, world, depth + 1),
+                    Some(scatter) => {
+                        scatter.attenuation
+                            * match scatter.ray {
+                                Some(ray) => cast_ray(ray, world, depth + 1),
+                                None => Vec3::new_uniform(1.0),
+                            }
+                    }
                     None => Vec3::new(0.0, 0.0, 0.0),
                 }
             } else {
@@ -151,7 +157,8 @@ impl rhai::CustomType for Material {
             .with_name("Material")
             .with_fn("lambertian", Material::new_lambertian)
             .with_fn("metal", Material::new_metal)
-            .with_fn("dielectric", Material::new_dielectric);
+            .with_fn("dielectric", Material::new_dielectric)
+            .with_fn("emissive", Material::new_emissive);
     }
 }
 
