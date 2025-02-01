@@ -12,7 +12,7 @@ use rand::Rng;
 const MAX_DEPTH: u32 = 16;
 
 // Take ownership of the ray so it can be dropped sooner
-pub fn cast_ray(ray: Ray, world: &Box<dyn Hittable>, depth: u32) -> Vec3 {
+pub fn cast_ray(ray: Ray, world: &Box<dyn Hittable>, skybox_scale: f32, depth: u32) -> Vec3 {
     // 0.0001 is to  avoid reintersecting the same object on bounces
     let hit = world.intersects_ray(&ray, (0.001, f32::MAX));
 
@@ -21,13 +21,20 @@ pub fn cast_ray(ray: Ray, world: &Box<dyn Hittable>, depth: u32) -> Vec3 {
             let unit_direction = ray.direction.make_unit();
             let t = 0.5 * (unit_direction.y + 1.0);
 
-            // Lerp blue and white
-            (1.0 - t) * Vec3::new(1.0, 1.0, 1.0) + t * Vec3::new(0.5, 0.7, 1.0)
+            // Lerp blue and white, scale down/up for general brightness
+            // TODO: Could be fancier
+            skybox_scale * ((1.0 - t) * Vec3::new(1.0, 1.0, 1.0) + t * Vec3::new(0.5, 0.7, 1.0))
         }
         Some(hit) => {
             if depth < MAX_DEPTH {
                 match hit.material.scatter(&ray, &hit) {
-                    Some(scatter) => scatter.attenuation * cast_ray(scatter.ray, world, depth + 1),
+                    Some(scatter) => {
+                        scatter.attenuation
+                            * match scatter.ray {
+                                Some(ray) => cast_ray(ray, world, skybox_scale, depth + 1),
+                                None => Vec3::new_uniform(1.0),
+                            }
+                    }
                     None => Vec3::new(0.0, 0.0, 0.0),
                 }
             } else {
@@ -62,6 +69,7 @@ pub fn output_buffer(
     samples: u32,
     camera: &Camera,
     scene: &Box<dyn Hittable>,
+    skybox_scale: f32, // TODO: Make this a proper skybox/gradient control
     on_progress: &impl Fn(Vec<u8>),
 ) -> Vec<u8> {
     let mut rng = rand::thread_rng();
@@ -81,7 +89,7 @@ pub fn output_buffer(
                 let v = ((height - y) as f32 + rng.gen::<f32>()) / height as f32;
                 let ray = camera.get_ray(u, v);
 
-                color += cast_ray(ray, &scene, 0);
+                color += cast_ray(ray, &scene, skybox_scale, 0);
 
                 // Write colour value into buffer
                 data[i] += color.x;
@@ -151,7 +159,8 @@ impl rhai::CustomType for Material {
             .with_name("Material")
             .with_fn("lambertian", Material::new_lambertian)
             .with_fn("metal", Material::new_metal)
-            .with_fn("dielectric", Material::new_dielectric);
+            .with_fn("dielectric", Material::new_dielectric)
+            .with_fn("emissive", Material::new_emissive);
     }
 }
 

@@ -4,6 +4,8 @@ An implementation of Peter Shirley's
 [Ray Tracing in One Weekend](https://raytracing.github.io/books/RayTracingInOneWeekend.html)
 in Rust.
 
+![A reference scene](./scene.ref.png "A reference scene of many spheres")
+
 This was mostly a way for me to learn about Rust while making some pretty
 pictures. Definitely has room for improvement.
 

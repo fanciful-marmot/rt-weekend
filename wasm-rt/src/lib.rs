@@ -22,7 +22,13 @@ pub fn render(script: &str, on_progress: js_sys::Function) {
         .build_type::<Sphere>()
         .register_fn(
             "render",
-            move |w: i64, h: i64, s: i64, c: Camera, scene: rhai::Array, _p: &str| {
+            move |w: i64,
+                  h: i64,
+                  s: i64,
+                  c: Camera,
+                  scene: rhai::Array,
+                  skybox_scale: f32,
+                  _p: &str| {
                 let mut list: Vec<Box<dyn Hittable>> = Vec::new();
                 for sphere in scene.iter() {
                     match sphere.clone().try_cast::<Sphere>() {
@@ -47,7 +53,7 @@ pub fn render(script: &str, on_progress: js_sys::Function) {
                 };
 
                 // Data MUST be in RGBA format
-                let data = output_buffer(width, height, s as u32, &c, &world, &p);
+                let data = output_buffer(width, height, s as u32, &c, &world, skybox_scale, &p);
                 p(data);
             },
         );

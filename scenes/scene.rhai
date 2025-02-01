@@ -1,54 +1,10 @@
-<!doctype html>
-<html lang="en-US">
-  <head>
-    <meta charset="utf-8" />
-    <title>rt-weekend</title>
-    <style>
-      html {
-        height: 100vh;
-      }
-      body {
-        position: relative;
-        display: flex;
-        flex-direction: row;
-        margin: 0;
-        padding: 4px;
-        gap: 4px;
-        height: 100%;
-        box-sizing: border-box;
-      }
-      .wrapper {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 4px;
-      }
-      .canvas {
-        background-color: black;
-      }
-      .btn-run {
-        height: 20px;
-      }
-      .code {
-        flex-grow: 1;
-        max-width: 600px;
-      }
-      .run-wrapper {
-        display: flex;
-        flex-direction: row;
-        justify-content: flex-start;
-        gap: 4px;
-      }
-    </style>
-  </head>
-  <body>
-    <textarea id="script" class="code">
-// DON'T CHANGE SIZE
-let width = 600.0;
-let height = 300.0;
-// Can toggle this
-let samples = 100;
+// Total time: 103.49 seconds (Macbook Air M1, 2020)
+// width = 1200;
+// height = 600;
+// samples = 200;
+let width = 1200.0;
+let height = 600.0;
+let samples = 600;
 
 // Setup camera
 let look_from = vec3(15.0, 2.0, 3.0);
@@ -126,15 +82,4 @@ scene.push(
 
 // Render
 let sky_brightness = 0.15;
-render(width.to_int(), height.to_int(), samples, cam, scene, sky_brightness, "scene.png");      
-    </textarea>
-    <div class="wrapper">
-      <canvas id="output" class="canvas" width="600" height="300"></canvas>
-      <div class="run-wrapper">
-        <button id="run" class="btn-run" disabled>Run</button>
-        <div id="time" class="time"></div>
-      </div>
-    </div>
-    <script src="index.mjs" type="module"></script>
-  </body>
-</html>
+render(width.to_int(), height.to_int(), samples, cam, scene, sky_brightness, "scene.png");

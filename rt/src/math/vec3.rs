@@ -14,6 +14,10 @@ impl Vec3 {
         Vec3 { x, y, z }
     }
 
+    pub fn new_uniform(s: f32) -> Vec3 {
+        Vec3::new(s, s, s)
+    }
+
     pub fn new_zeroes() -> Vec3 {
         Vec3 {
             x: 0.0,
