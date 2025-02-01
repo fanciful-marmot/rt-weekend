@@ -2,8 +2,8 @@
 // width = 1200;
 // height = 600;
 // samples = 200;
-let width = 1920.0;
-let height = 1080.0;
+let width = 1200.0;
+let height = 600.0;
 let samples = 600;
 
 // Setup camera
@@ -81,4 +81,5 @@ scene.push(
 );
 
 // Render
-render(width.to_int(), height.to_int(), samples, cam, scene, "image_ch_1.png");
+let sky_brightness = 0.15;
+render(width.to_int(), height.to_int(), samples, cam, scene, sky_brightness, "scene.png");

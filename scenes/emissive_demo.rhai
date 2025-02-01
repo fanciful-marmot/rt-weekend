@@ -1,4 +1,4 @@
-// Total time: 29.82 seconds (Macbook Air M1, 2020)
+// Total time: 20.476 seconds (Macbook Air M1, 2020)
 // width = 1200;
 // height = 600;
 // samples = 200;
@@ -7,7 +7,7 @@ let height = 600.0;
 let samples = 200;
 
 // Setup camera
-let look_from = vec3(0.0, 0.5, 1.0);
+let look_from = vec3(0.0, 0.0, 0.0);
 let look_at = vec3(0.0, 0.0, -1.0);
 let v_up = vec3(0.0, 1.0, 0.0);
 let v_fov = 90.0;
@@ -28,4 +28,5 @@ let scene = [
 ];
 
 // Render
-render(width.to_int(), height.to_int(), samples, cam, scene, "emissive_demo.png");
+let sky_brightness = 0.1;
+render(width.to_int(), height.to_int(), samples, cam, scene, sky_brightness, "emissive_demo.png");

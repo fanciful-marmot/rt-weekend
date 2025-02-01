@@ -27,4 +27,5 @@ let scene = [
 ];
 
 // Render
-render(width.to_int(), height.to_int(), samples, cam, scene, "dielectric_demo.png");
+let sky_brightness = 1.0;
+render(width.to_int(), height.to_int(), samples, cam, scene, sky_brightness, "dielectric_demo.png");

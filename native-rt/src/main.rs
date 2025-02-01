@@ -38,14 +38,29 @@ pub fn output_png(
     samples: u32,
     camera: &Camera,
     scene: &Box<dyn Hittable>,
+    skybox_scale: f32,
     output_path: &str,
 ) {
-    let data = output_buffer(width, height, samples, camera, scene, &|_v: Vec<u8>| {});
+    let data = output_buffer(
+        width,
+        height,
+        samples,
+        camera,
+        scene,
+        skybox_scale,
+        &|_v: Vec<u8>| {},
+    );
 
     write_png(output_path, width, height, &data);
 }
 
-pub fn output_window(width: usize, height: usize, camera: &Camera, scene: &Box<dyn Hittable>) {
+pub fn output_window(
+    width: usize,
+    height: usize,
+    camera: &Camera,
+    scene: &Box<dyn Hittable>,
+    skybox_scale: f32,
+) {
     const MAX_SAMPLES: u32 = 100;
     let mut rng = rand::thread_rng();
 
@@ -80,7 +95,7 @@ pub fn output_window(width: usize, height: usize, camera: &Camera, scene: &Box<d
                     let u = (x as f32 + rng.gen::<f32>()) / width as f32;
                     let v = ((height - y) as f32 + rng.gen::<f32>()) / height as f32;
                     let ray = camera.get_ray(u, v);
-                    color += cast_ray(ray, scene, 0);
+                    color += cast_ray(ray, scene, skybox_scale, 0);
 
                     // Acculumate colors
                     data[i] += color.x;
@@ -118,7 +133,13 @@ fn run_script(script: &str, window: bool) -> Result<(), Box<rhai::EvalAltResult>
         .build_type::<Sphere>()
         .register_fn(
             "render",
-            move |w: i64, h: i64, s: i64, c: Camera, scene: rhai::Array, p: &str| {
+            move |w: i64,
+                  h: i64,
+                  s: i64,
+                  c: Camera,
+                  scene: rhai::Array,
+                  skybox_scale: f32,
+                  p: &str| {
                 let mut list: Vec<Box<dyn Hittable>> = Vec::new();
                 for sphere in scene.iter() {
                     match sphere.clone().try_cast::<Sphere>() {
@@ -134,9 +155,9 @@ fn run_script(script: &str, window: bool) -> Result<(), Box<rhai::EvalAltResult>
                 };
 
                 if window {
-                    output_window(w as usize, h as usize, &c, &world);
+                    output_window(w as usize, h as usize, &c, &world, skybox_scale);
                 } else {
-                    output_png(w as u32, h as u32, s as u32, &c, &world, p);
+                    output_png(w as u32, h as u32, s as u32, &c, &world, skybox_scale, p);
                 }
             },
         );

@@ -51,7 +51,7 @@ let height = 300.0;
 let samples = 100;
 
 // Setup camera
-let look_from = vec3(13.0, 2.0, 3.0);
+let look_from = vec3(15.0, 2.0, 3.0);
 let look_at = vec3(0.0, 0.0, 0.0);
 let v_up = vec3(0.0, 1.0, 0.0);
 let v_fov = 20.0;
@@ -82,24 +82,33 @@ for a in range(-11, 10) {
         let x_sqr = (x - 4.0) * (x - 4.0);
         let y_sqr = 0.0;
         let z_sqr = z * z;
+        let r = 0.2;
 
         if (x_sqr + z_sqr) > 0.9 * 0.9 {
-            let mat = if choose_mat < 0.8 {
+            let mat = if choose_mat < 0.65 {
                 // diffuse
                 lambertian(vec3(rand2(), rand2(), rand2()))
-            } else if choose_mat < 0.95 {
+            } else if choose_mat < 0.85 {
                 // metal
                 metal(
                     vec3(rand_float(0.5, 1.0), rand_float(0.5, 1.0), rand_float(0.5, 1.0)),
                     rand_float(0.0, 0.5),
                 )
+            } else if choose_mat < 0.95 {
+                r = 0.25;
+                // emissive
+                emissive(vec3(
+                    rand_float(2.2, 8.0),
+                    rand_float(2.2, 8.0),
+                    rand_float(2.2, 8.0),
+                ))
             } else {
                 // glass
                 dielectric(1.5)
             };
 
             scene.push(
-                sphere(vec3(x, y, z), 0.2, mat)
+                sphere(vec3(x, r, z), r, mat)
             );
         }
     }
@@ -116,7 +125,8 @@ scene.push(
 );
 
 // Render
-render(width.to_int(), height.to_int(), samples, cam, scene, "image_ch_1.png");      
+let sky_brightness = 0.15;
+render(width.to_int(), height.to_int(), samples, cam, scene, sky_brightness, "scene.png");      
     </textarea>
     <div class="wrapper">
       <canvas id="output" class="canvas" width="600" height="300"></canvas>

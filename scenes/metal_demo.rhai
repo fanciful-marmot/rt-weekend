@@ -28,4 +28,5 @@ let scene = [
 ];
 
 // Render
-render(width.to_int(), height.to_int(), samples, cam, scene, "metal_demo.png");
+let sky_brightness = 1.0;
+render(width.to_int(), height.to_int(), samples, cam, scene, sky_brightness, "metal_demo.png");

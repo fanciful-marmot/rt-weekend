@@ -30,4 +30,5 @@ let scene = [
 ];
 
 // Render
-render(width.to_int(), height.to_int(), samples, cam, scene, "caustics_demo.png");
+let sky_brightness = 0.1;
+render(width.to_int(), height.to_int(), samples, cam, scene, sky_brightness, "caustics_demo.png");
