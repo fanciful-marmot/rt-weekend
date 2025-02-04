@@ -46,7 +46,7 @@ pub fn cast_ray(ray: Ray, world: &Box<dyn Hittable>, skybox_scale: f32, depth: u
     color
 }
 
-fn f32_buf_to_u8(fb: &Vec<f32>, samples: f32) -> Vec<u8> {
+pub fn f32_buf_to_u8(fb: &Vec<f32>, samples: f32) -> Vec<u8> {
     let pixels = fb.len() / 3;
     let mut vu8: Vec<u8> = vec![0; pixels * 4];
     for i in 0..pixels {
@@ -70,8 +70,8 @@ pub fn output_buffer(
     camera: &Camera,
     scene: &Box<dyn Hittable>,
     skybox_scale: f32, // TODO: Make this a proper skybox/gradient control
-    on_progress: &impl Fn(Vec<u8>),
-) -> Vec<u8> {
+    on_progress: &impl Fn(&Vec<f32>, f32),
+) -> Vec<f32> {
     let mut rng = rand::thread_rng();
     let size = (width * height * 3) as usize;
     let mut data: Vec<f32> = vec![0.0; size];
@@ -100,11 +100,11 @@ pub fn output_buffer(
 
         // Send results every 10 samples
         if s % 10 == 0 {
-            on_progress(f32_buf_to_u8(&data, (s + 1) as f32));
+            on_progress(&data, (s + 1) as f32);
         }
     }
 
-    f32_buf_to_u8(&data, samples as f32)
+    data
 }
 
 // Rhai bindings

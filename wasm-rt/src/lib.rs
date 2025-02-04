@@ -9,7 +9,7 @@ use rt::camera::Camera;
 use rt::geometry::{BVHNode, Hittable, HittableList, Sphere};
 use rt::material::Material;
 use rt::math::Vec3;
-use rt::output_buffer;
+use rt::{f32_buf_to_u8, output_buffer};
 
 #[wasm_bindgen]
 pub fn render(script: &str, on_progress: js_sys::Function) {
@@ -47,14 +47,15 @@ pub fn render(script: &str, on_progress: js_sys::Function) {
                 let width = w as u32;
                 let height = h as u32;
 
-                let p = |data: Vec<u8>| {
+                let p = |data: &Vec<f32>, s: f32| {
                     let this = JsValue::null();
-                    let _ = on_progress.call1(&this, &JsValue::from(data.as_ptr()));
+                    let du8 = f32_buf_to_u8(&data, s);
+                    let _ = on_progress.call1(&this, &JsValue::from(du8.as_ptr()));
                 };
 
                 // Data MUST be in RGBA format
                 let data = output_buffer(width, height, s as u32, &c, &world, skybox_scale, &p);
-                p(data);
+                p(&data, s as f32);
             },
         );
 
