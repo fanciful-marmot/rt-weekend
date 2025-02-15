@@ -50,14 +50,11 @@ fn output_image(
     output_path: &str,
     format: ImageFormat,
 ) {
-    let mutex = Arc::new(Mutex::new(vec![0.0f32; (width * height * 3) as usize]));
-
     let mut handles = vec![];
 
     let samples_per_thread = (samples / threads).max(1);
 
     for _ in 0..threads {
-        let thrd_mutex = Arc::clone(&mutex);
         let thrd_camera = camera.clone();
         let thrd_scene = scene.clone();
         let handle = thread::spawn(move || {
@@ -81,26 +78,33 @@ fn output_image(
                 &|_v: &Vec<f32>, _s: f32| {},
             );
 
-            {
-                let mut shared = thrd_mutex.lock().unwrap();
-                for (i, v) in data.iter().enumerate() {
-                    (*shared)[i] += v;
-                }
-            }
+            data
+
+            // {
+            //     let mut shared = thrd_mutex.lock().unwrap();
+            //     for (i, v) in data.iter().enumerate() {
+            //         (*shared)[i] += v;
+            //     }
+            // }
         });
         handles.push(handle);
     }
 
     // Join the threads
-    for handle in handles {
-        handle.join().unwrap();
-    }
+    let result = handles.drain(..).map(|h| h.join().unwrap()).fold(
+        vec![0.0f32; (width * height * 3) as usize],
+        |mut acc, thread_result| {
+            for (i, v) in thread_result.iter().enumerate() {
+                acc[i] += v;
+            }
 
-    let shared = mutex.lock().unwrap();
+            acc
+        },
+    );
 
     // Get the average samples
     let denom = (samples_per_thread * threads) as f32;
-    let averaged: Vec<f32> = (*shared).iter().map(|&v| v / denom).collect();
+    let averaged: Vec<f32> = result.iter().map(|&v| v / denom).collect();
 
     // Write the image
     match format {
