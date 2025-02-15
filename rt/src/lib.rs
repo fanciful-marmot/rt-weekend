@@ -46,17 +46,18 @@ pub fn cast_ray(ray: Ray, world: &Box<dyn Hittable>, skybox_scale: f32, depth: u
     color
 }
 
-pub fn f32_buf_to_u8(fb: &Vec<f32>, samples: f32) -> Vec<u8> {
+// Converts an f32 buffer to u8.
+// f32 values are clamped to [0, 1], gamma corrected, and then mapped to [0, 255]
+pub fn f32_buf_to_u8(fb: &[f32]) -> Vec<u8> {
     let pixels = fb.len() / 3;
     let mut vu8: Vec<u8> = vec![0; pixels * 4];
     for i in 0..pixels {
         let vu8i = i * 4;
         let fbi = i * 3;
         // Gamma correction.
-        // TODO: Is it needed?
-        vu8[vu8i] = ((fb[fbi] / samples).sqrt() * 255.99) as u8;
-        vu8[vu8i + 1] = ((fb[fbi + 1] / samples).sqrt() * 255.99) as u8;
-        vu8[vu8i + 2] = ((fb[fbi + 2] / samples).sqrt() * 255.99) as u8;
+        vu8[vu8i] = (fb[fbi].clamp(0.0, 1.0).sqrt() * 255.99) as u8;
+        vu8[vu8i + 1] = (fb[fbi + 1].clamp(0.0, 1.0).sqrt() * 255.99) as u8;
+        vu8[vu8i + 2] = (fb[fbi + 2].clamp(0.0, 1.0).sqrt() * 255.99) as u8;
         vu8[vu8i + 3] = 255;
     }
 

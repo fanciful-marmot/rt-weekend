@@ -33,13 +33,26 @@ I highly recommend running it in release mode. It's incredibly slow otherwise
 Either run the target directly or do `cargo run -- <args>`
 
 ```bash
-Usage: rt-weekend [OPTIONS] --scene <SCENE>
+Usage: native-rt [OPTIONS] --scene <SCENE>
 
 Options:
-  -s, --scene <SCENE>  .rhai file describing the scene to render
-  -w, --window         Output incrementally to window instead
-  -h, --help           Print help
-  -V, --version        Print version
+  -s, --scene <SCENE>      .rhai file describing the scene to render
+  -f, --format <FORMAT>    The image format to use when writing to file [default: png] [possible values: png, pfm]
+  -w, --window             Output incrementally to window instead
+  -t, --threads <THREADS>  How many threads to use [default: 1]
+  -h, --help               Print help
+  -V, --version            Print version
+```
+
+### Denoising
+
+You can get very nice results with fewer sample by running the result through a
+denoiser like [OIDN](https://github.com/RenderKit/oidn)
+
+The PFM output format is helpful for this. To run it through OIDN:
+
+```
+oidnDenoise --hdr render_output.pfm -o denoised.pfm -t float
 ```
 
 ## Web

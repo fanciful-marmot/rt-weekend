@@ -24,4 +24,4 @@ let scene = [
 
 // Render
 let sky_brightness = 1.0;
-render(width.to_int(), height.to_int(), samples, cam, scene, sky_brightness, "diffuse_demo.png");
+render(width.to_int(), height.to_int(), samples, cam, scene, sky_brightness, "diffuse_demo");

@@ -29,4 +29,4 @@ let scene = [
 
 // Render
 let sky_brightness = 0.1;
-render(width.to_int(), height.to_int(), samples, cam, scene, sky_brightness, "emissive_demo.png");
+render(width.to_int(), height.to_int(), samples, cam, scene, sky_brightness, "emissive_demo");

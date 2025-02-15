@@ -49,7 +49,8 @@ pub fn render(script: &str, on_progress: js_sys::Function) {
 
                 let p = |data: &Vec<f32>, s: f32| {
                     let this = JsValue::null();
-                    let du8 = f32_buf_to_u8(&data, s);
+                    let averaged: Vec<f32> = data.iter().map(|&v| v / s).collect();
+                    let du8 = f32_buf_to_u8(&averaged);
                     let _ = on_progress.call1(&this, &JsValue::from(du8.as_ptr()));
                 };
 

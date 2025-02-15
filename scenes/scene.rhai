@@ -82,4 +82,4 @@ scene.push(
 
 // Render
 let sky_brightness = 0.15;
-render(width.to_int(), height.to_int(), samples, cam, scene, sky_brightness, "scene.png");
+render(width.to_int(), height.to_int(), samples, cam, scene, sky_brightness, "scene");

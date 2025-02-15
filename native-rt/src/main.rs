@@ -1,8 +1,10 @@
+mod image_writer;
+
 use clap::Parser;
 
 use std::fs::File;
-use std::io::{BufWriter, Read};
-use std::path::Path;
+use std::io::Read;
+
 use std::sync::{Arc, Mutex};
 use std::thread;
 
@@ -18,23 +20,26 @@ use rt::camera::Camera;
 use rt::geometry::{BVHNode, Hittable, HittableList, Sphere};
 use rt::material::Material;
 use rt::math::Vec3;
-use rt::{cast_ray, f32_buf_to_u8, output_buffer};
+use rt::{cast_ray, output_buffer};
 
-// Writes a u8 data buffer in RGBA format to a png file
-fn write_png(file_name: &str, width: u32, height: u32, data: &[u8]) {
-    let path = Path::new(file_name);
-    let file = File::create(path).unwrap();
-    let ref mut w = BufWriter::new(file);
+use image_writer::{write_pfm, write_png};
 
-    let mut encoder = png::Encoder::new(w, width, height);
-    encoder.set_color(png::ColorType::Rgba);
-    encoder.set_depth(png::BitDepth::Eight);
-    let mut writer = encoder.write_header().unwrap();
-
-    writer.write_image_data(&data).unwrap(); // Save
+#[derive(Debug, Clone, Copy, clap::ValueEnum)]
+enum ImageFormat {
+    PNG,
+    PFM,
 }
 
-pub fn output_png(
+impl ToString for ImageFormat {
+    fn to_string(&self) -> String {
+        match self {
+            ImageFormat::PFM => "pfm".into(),
+            ImageFormat::PNG => "png".into(),
+        }
+    }
+}
+
+fn output_image(
     width: u32,
     height: u32,
     samples: u32,
@@ -43,6 +48,7 @@ pub fn output_png(
     skybox_scale: f32,
     threads: u32,
     output_path: &str,
+    format: ImageFormat,
 ) {
     let mutex = Arc::new(Mutex::new(vec![0.0f32; (width * height * 3) as usize]));
 
@@ -91,8 +97,16 @@ pub fn output_png(
     }
 
     let shared = mutex.lock().unwrap();
-    let data = f32_buf_to_u8(&(*shared), (samples_per_thread * threads) as f32);
-    write_png(output_path, width, height, &data);
+
+    // Get the average samples
+    let denom = (samples_per_thread * threads) as f32;
+    let averaged: Vec<f32> = (*shared).iter().map(|&v| v / denom).collect();
+
+    // Write the image
+    match format {
+        ImageFormat::PNG => write_png(output_path, width, height, &averaged),
+        ImageFormat::PFM => write_pfm(output_path, width, height, &averaged),
+    }
 }
 
 pub fn output_window(
@@ -228,7 +242,12 @@ pub fn output_window(
     }
 }
 
-fn run_script(script: &str, window: bool, threads: u32) -> Result<(), Box<rhai::EvalAltResult>> {
+fn run_script(
+    script: &str,
+    format: ImageFormat,
+    window: bool,
+    threads: u32,
+) -> Result<(), Box<rhai::EvalAltResult>> {
     let mut engine = Engine::new();
     engine
         .build_type::<Vec3>()
@@ -255,7 +274,7 @@ fn run_script(script: &str, window: bool, threads: u32) -> Result<(), Box<rhai::
                 if window {
                     output_window(w as usize, h as usize, &c, list, skybox_scale, threads);
                 } else {
-                    output_png(
+                    output_image(
                         w as u32,
                         h as u32,
                         s as u32,
@@ -264,6 +283,7 @@ fn run_script(script: &str, window: bool, threads: u32) -> Result<(), Box<rhai::
                         skybox_scale,
                         threads,
                         p,
+                        format,
                     );
                 }
             },
@@ -285,6 +305,10 @@ struct Args {
     /// .rhai file describing the scene to render
     #[arg(short, long)]
     scene: String,
+
+    /// The image format to use when writing to file
+    #[arg(short, long, default_value_t = ImageFormat::PNG, value_parser = clap::value_parser!(ImageFormat))]
+    format: ImageFormat,
 
     /// Output incrementally to window instead
     #[arg(short, long)]
@@ -308,7 +332,7 @@ fn main() {
         .expect("could not read script");
 
     // Run script
-    let result = run_script(&script, args.window, args.threads);
+    let result = run_script(&script, args.format, args.window, args.threads);
 
     match result {
         Ok(()) => println!("Done!"),
